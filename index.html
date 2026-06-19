@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>상상토끼 폰틀리에 — AI 폰트 추천 & 미리보기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Brush+Script&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #02bca7;
+      --primary-dark: #019e8d;
+      --bg: #ffffff;
+      --bg-subtle: #f7fffe;
+      --text: #1a1a1a;
+      --text-muted: #666666;
+      --border: #e0f5f3;
+      --card-shadow: 0 2px 12px rgba(2, 188, 167, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    #fontelier-widget {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 헤더 */
+    .widget-header {
+      text-align: center;
+      padding: 24px 0 16px;
+    }
+    .widget-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .widget-header h1 span { font-size: 1.6rem; }
+    .widget-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* API 키 설정 */
+    .api-settings {
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .api-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--bg-subtle);
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+    .api-toggle:hover { background: var(--border); }
+    .api-toggle .arrow { transition: transform 0.2s; }
+    .api-toggle.open .arrow { transform: rotate(180deg); }
+    .api-body {
+      display: none;
+      padding: 12px 16px;
+      gap: 8px;
+    }
+    .api-body.show { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .api-body input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: monospace;
+      outline: none;
+    }
+    .api-body input:focus { border-color: var(--primary); }
+    .api-body button {
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .api-body button:hover { background: var(--primary-dark); }
+    .api-status {
+      width: 100%;
+      font-size: 0.8rem;
+      color: var(--primary-dark);
+    }
+
+    /* 탭 */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: none;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab-btn:hover { color: var(--primary-dark); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* 공통 입력 */
+    .input-group { margin-bottom: 16px; }
+    .input-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .text-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .text-input:focus { border-color: var(--primary); }
+
+    /* 태그 */
+    .tags-section { margin-bottom: 16px; }
+    .tags-section label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+    .tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--text);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .tag-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .tag-btn.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* AI 추천 버튼 */
+    .recommend-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .recommend-btn:hover { background: var(--primary-dark); }
+    .recommend-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* 로딩 */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 추천 결과 */
+    .results-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .result-cards { display: flex; flex-direction: column; gap: 16px; }
+    .result-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: var(--bg-subtle);
+      box-shadow: var(--card-shadow);
+    }
+    .result-card .rank {
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .result-card .font-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .result-card .font-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .result-card .preview-text {
+      padding: 16px;
+      background: #fff;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      min-height: 50px;
+      line-height: 1.4;
+    }
+    .result-card .reason, .result-card .usage {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .result-card .reason strong, .result-card .usage strong {
+      color: var(--text-muted);
+    }
+    .buy-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    .buy-btn:hover { background: var(--primary-dark); }
+
+    /* 에러 */
+    .error-msg {
+      padding: 16px;
+      background: #fff5f5;
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      color: #dc2626;
+      font-size: 0.9rem;
+      margin-top: 16px;
+    }
+
+    /* 미리보기 탭 컨트롤 */
+    .preview-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .preview-controls select,
+    .preview-controls input[type="range"] {
+      font-family: inherit;
+    }
+    .preview-controls select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      background: #fff;
+    }
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .range-wrap input[type="range"] {
+      width: 100px;
+      accent-color: var(--primary);
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .toggle-wrap input[type="checkbox"] { accent-color: var(--primary); }
+
+    /* 폰트 목록 */
+    .font-list { display: flex; flex-direction: column; gap: 12px; }
+    .font-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      background: #fff;
+      transition: box-shadow 0.2s;
+    }
+    .font-item:hover { box-shadow: var(--card-shadow); }
+    .font-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .font-item-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .font-item-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+    .badge-category { background: var(--border); color: var(--primary-dark); }
+    .badge-free { background: var(--primary); color: #fff; }
+    .font-item-preview {
+      margin: 8px 0;
+      line-height: 1.4;
+      word-break: keep-all;
+    }
+    .font-item-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .buy-btn-sm {
+      padding: 6px 14px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .buy-btn-sm:hover { background: var(--primary-dark); }
+
+    /* 반응형 */
+    @media (max-width: 480px) {
+      #fontelier-widget { padding: 12px; }
+      .widget-header h1 { font-size: 1.2rem; }
+      .result-cards { gap: 12px; }
+      .result-card { padding: 14px; }
+      .preview-controls { flex-direction: column; align-items: flex-start; }
+      .range-wrap input[type="range"] { width: 140px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="fontelier-widget">
+    <!-- 헤더 -->
+    <div class="widget-header">
+      <h1><span>🐰</span> 상상토끼 폰트 찾기</h1>
+      <p>내게 맞는 폰트를 AI가 추천해드려요</p>
+    </div>
+
+    <!-- API 키 설정 -->
+    <div class="api-settings">
+      <button class="api-toggle" onclick="toggleApiPanel()" aria-label="API 키 설정 열기/닫기">
+        <span>⚙️ API 키 설정</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="api-body" id="apiBody">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-... Claude API 키를 입력하세요">
+        <button onclick="saveApiKey()">저장</button>
+        <div class="api-status" id="apiStatus"></div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('recommend')" aria-label="AI 추천 탭">🤖 AI 추천</button>
+      <button class="tab-btn" onclick="switchTab('preview')" aria-label="미리보기 탭">🔤 미리보기</button>
+    </div>
+
+    <!-- Tab 1: AI 추천 -->
+    <div class="tab-content active" id="tab-recommend">
+      <div class="input-group">
+        <label for="purposeInput">어떤 용도로 사용하실 건가요?</label>
+        <input type="text" class="text-input" id="purposeInput" placeholder="예) 카페 메뉴판에 쓸 따뜻하고 감성적인 폰트">
+      </div>
+
+      <div class="tags-section">
+        <label>분위기 (다중 선택)</label>
+        <div class="tags-wrap" id="moodTags"></div>
+      </div>
+
+      <div class="tags-section">
+        <label>용도 (다중 선택)</label>
+        <div class="tags-wrap" id="useTags"></div>
+      </div>
+
+      <button class="recommend-btn" id="recommendBtn" onclick="getRecommendation()" aria-label="AI 추천 받기">
+        🤖 AI 추천 받기
+      </button>
+
+      <div id="recommendResult"></div>
+    </div>
+
+    <!-- Tab 2: 미리보기 -->
+    <div class="tab-content" id="tab-preview">
+      <div class="input-group">
+        <label for="previewInput">미리볼 문장을 입력하세요</label>
+        <input type="text" class="text-input" id="previewInput" value="봄날의 따뜻한 햇살처럼" oninput="renderPreviewList()">
+      </div>
+
+      <div class="preview-controls">
+        <select id="categoryFilter" onchange="renderPreviewList()" aria-label="카테고리 필터">
+          <option value="전체">전체</option>
+        </select>
+        <div class="range-wrap">
+          <label for="sizeSlider">크기:</label>
+          <input type="range" id="sizeSlider" min="24" max="72" value="40" oninput="updateSize()">
+          <span id="sizeValue">40px</span>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="freeToggle" onchange="renderPreviewList()">
+          무료만 보기
+        </label>
+      </div>
+
+      <div class="font-list" id="fontList"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── 폰트 데이터 ──
+    const FONT_DATA = [
+      { id: "sangsang-flowroad", name: "꽃길", nameEn: "SangSangFlowerRoad", category: "감성손글씨", price: 0, isFree: true, tags: ["감성", "봄", "여성스러운", "SNS", "캘리"], mood: ["따뜻한", "사랑스러운", "부드러운"], useCase: ["SNS", "카드", "청첩장", "굿즈"], previewFont: "Nanum Pen Script", shopUrl: "https://sangsangfont.com/21", description: "꽃길만 걷게 해줄 것 같은 봄날의 감성 손글씨체" },
+      { id: "sangsang-rocknroll", name: "록큰롤베이비", nameEn: "RockNRollBaby", category: "감성손글씨", price: 39000, isFree: false, tags: ["개성", "힙", "빈티지", "에너지"], mood: ["강렬한", "개성있는", "힙한"], useCase: ["포스터", "유튜브썸네일", "브랜딩", "굿즈"], previewFont: "Black Han Sans", shopUrl: "https://sangsangfont.com/fontshop/?idx=216", description: "강렬한 에너지가 폭발하는 록앤롤 감성의 손글씨" },
+      { id: "taktak-clover", name: "탁탁클로버", nameEn: "TaktakClover", category: "타입우라이터", price: 35000, isFree: false, tags: ["레트로", "빈티지", "타자기", "감성", "향수"], mood: ["레트로", "아련한", "고풍스러운"], useCase: ["영화포스터", "레트로디자인", "엽서", "카드"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=151", description: "격동의 시대, 아련했던 열정이 담긴 타자기 소리" },
+      { id: "taktak-625", name: "탁탁육이오", nameEn: "Taktak625", category: "타입우라이터", price: 35000, isFree: false, tags: ["레트로", "역사", "빈티지", "시네마틱"], mood: ["묵직한", "역사적인", "시네마틱"], useCase: ["다큐멘터리", "영화포스터", "역사테마"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=148", description: "영화 육사오에 기부 제공된 바로 그 타자기체" },
+      { id: "taktak-topstar", name: "탁탁탑스타", nameEn: "TaktakTopstar", category: "타입우라이터", price: 35000, isFree: false, tags: ["레트로", "할리우드", "빈티지", "영화"], mood: ["화려한", "레트로", "클래식"], useCase: ["영화포스터", "티켓", "이벤트"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=149", description: "옛 할리우드 황금기의 영화 타이틀 감성" },
+      { id: "webtoon-hwareuruk", name: "웹툰화르륵체", nameEn: "WebtoonHwareuruk", category: "웹툰효과음", price: 25000, isFree: false, tags: ["웹툰", "효과음", "만화", "역동적"], mood: ["역동적인", "강렬한", "유머러스"], useCase: ["웹툰", "유튜브썸네일", "게임UI"], previewFont: "Black Han Sans", shopUrl: "https://sangsangfont.com/fontshop/?idx=237", description: "웹툰 불꽃 효과에 최적화된 역동적 효과음체" },
+      { id: "webtoon-kwang", name: "웹툰콰앙체", nameEn: "WebtoonKwang", category: "웹툰효과음", price: 25000, isFree: false, tags: ["웹툰", "효과음", "만화", "강렬"], mood: ["폭발적인", "강렬한", "액션"], useCase: ["웹툰", "게임", "액션씬"], previewFont: "Black Han Sans", shopUrl: "https://sangsangfont.com/fontshop/?idx=234", description: "폭발하는 듯한 강렬한 임팩트의 웹툰 효과음체" },
+      { id: "hollywood-regular", name: "허리우드 레귤러", nameEn: "Hollywood Regular", category: "그래픽", price: 25000, isFree: false, tags: ["레트로", "영화", "빈티지", "그래픽"], mood: ["클래식한", "고급스러운", "빈티지"], useCase: ["포스터", "브랜딩", "로고", "영화"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=208", description: "옛 할리우드 영화 간판에서 영감 받은 그래픽체" },
+      { id: "blackswan", name: "블랙스완 레귤러", nameEn: "BlackSwan Regular", category: "그래픽", price: 25000, isFree: false, tags: ["우아한", "고급", "모던", "여성스러운"], mood: ["우아한", "고급스러운", "신비로운"], useCase: ["브랜딩", "패션", "뷰티", "초대장"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=241", description: "우아함과 신비로움이 공존하는 고급 그래픽체" },
+      { id: "barbarian", name: "바바리안 레귤러", nameEn: "Barbarian Regular", category: "그래픽", price: 25000, isFree: false, tags: ["판타지", "게임", "강렬", "개성"], mood: ["강렬한", "판타지", "역동적"], useCase: ["게임", "판타지", "포스터", "유튜브"], previewFont: "Black Han Sans", shopUrl: "https://sangsangfont.com/fontshop/?idx=256", description: "판타지 세계관을 담은 강렬한 개성의 그래픽체" },
+      { id: "sangsang-myeongjo-r", name: "상상명조 R", nameEn: "SangSang Myeongjo R", category: "명조", price: 35000, isFree: false, tags: ["명조", "본문", "출판", "클래식", "가독성"], mood: ["클래식한", "차분한", "신뢰감"], useCase: ["출판", "본문", "브랜딩", "로고"], previewFont: "Nanum Myeongjo", shopUrl: "https://sangsangfont.com/fontshop/?idx=252", description: "상상토끼가 직접 제작한 아름다운 한글 명조체" },
+      { id: "shinbi-7", name: "신비는 7살체", nameEn: "Shinbi7", category: "키즈", price: 0, isFree: true, tags: ["키즈", "귀여운", "어린이", "교육"], mood: ["귀여운", "발랄한", "천진난만한"], useCase: ["교육자료", "키즈콘텐츠", "동화", "간판"], previewFont: "Nanum Pen Script", shopUrl: "https://sangsangfont.com/21", description: "7살 아이의 천진난만한 손글씨를 그대로 담은 폰트" },
+      { id: "yerin-7", name: "예린이도 일곱살", nameEn: "Yerin7", category: "키즈", price: 3000, isFree: false, tags: ["키즈", "귀여운", "어린이", "동화"], mood: ["귀여운", "순수한", "발랄한"], useCase: ["교육", "키즈브랜드", "동화책"], previewFont: "Nanum Pen Script", shopUrl: "https://sangsangfont.com/fontshop/?idx=215", description: "아이의 손글씨처럼 귀엽고 순수한 키즈 폰트" },
+      { id: "jeongmuk-baui", name: "정묵바위체", nameEn: "Jeongmuk Baui", category: "캘리그래피", price: 0, isFree: true, tags: ["캘리", "붓글씨", "힘찬", "전통", "남성적"], mood: ["힘찬", "전통적인", "묵직한"], useCase: ["브랜딩", "간판", "포스터", "전통"], previewFont: "Nanum Brush Script", shopUrl: "https://sangsangfont.com/21", description: "캘리그라피 작가 정묵 김덕수의 힘찬 붓글씨체" },
+      { id: "jeongmuk-instablush", name: "정묵 인스타블러쉬", nameEn: "Jeongmuk InstaBrush", category: "캘리그래피", price: 66000, isFree: false, tags: ["캘리", "SNS", "감성", "모던", "여성스러운"], mood: ["세련된", "감성적", "모던한"], useCase: ["인스타그램", "SNS", "브랜딩", "카페"], previewFont: "Nanum Brush Script", shopUrl: "https://sangsangfont.com/fontshop/?idx=249", description: "SNS 감성에 최적화된 정묵 작가의 모던 캘리체" },
+      { id: "jeongmuk-travel", name: "정묵 트래블페스타", nameEn: "Jeongmuk TravelFesta", category: "캘리그래피", price: 66000, isFree: false, tags: ["여행", "축제", "활기찬", "캘리"], mood: ["활기찬", "자유로운", "설레는"], useCase: ["여행", "축제", "이벤트", "팝업"], previewFont: "Nanum Brush Script", shopUrl: "https://sangsangfont.com/fontshop/?idx=262", description: "여행의 설렘과 축제의 활기를 담은 캘리그래피" },
+      { id: "little-school", name: "작은학교 레귤러", nameEn: "LittleSchool", category: "감성손글씨", price: 30000, isFree: false, tags: ["손글씨", "따뜻한", "교육", "감성"], mood: ["따뜻한", "포근한", "친근한"], useCase: ["교육", "SNS", "카드", "노트"], previewFont: "Nanum Pen Script", shopUrl: "https://sangsangfont.com/fontshop/?idx=251", description: "작은 학교의 칠판 손글씨 같은 따뜻한 감성체" }
+    ];
+
+    const MOOD_TAGS = ["감성적", "레트로", "귀여운/키즈", "웹툰/만화", "우아한/고급", "힘찬/남성적", "모던/세련된", "전통/클래식"];
+    const USE_TAGS = ["SNS/인스타", "유튜브썸네일", "청첩장", "카페메뉴판", "웹툰제작", "브랜딩/로고", "교육자료", "포스터"];
+
+    let selectedMoods = [];
+    let selectedUses = [];
+
+    // ── 초기화 ──
+    function init() {
+      renderTags("moodTags", MOOD_TAGS, selectedMoods);
+      renderTags("useTags", USE_TAGS, selectedUses);
+      initCategoryFilter();
+      renderPreviewList();
+
+      const saved = sessionStorage.getItem("fontelier-api-key");
+      if (saved) {
+        document.getElementById("apiKeyInput").value = saved;
+        document.getElementById("apiStatus").textContent = "✅ API 키가 저장되어 있습니다";
+      }
+    }
+
+    // ── API 키 ──
+    function toggleApiPanel() {
+      const body = document.getElementById("apiBody");
+      const toggle = document.querySelector(".api-toggle");
+      body.classList.toggle("show");
+      toggle.classList.toggle("open");
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById("apiKeyInput").value.trim();
+      if (!key) {
+        document.getElementById("apiStatus").textContent = "❌ API 키를 입력해주세요";
+        return;
+      }
+      sessionStorage.setItem("fontelier-api-key", key);
+      document.getElementById("apiStatus").textContent = "✅ API 키가 저장되었습니다";
+    }
+
+    function getApiKey() {
+      return sessionStorage.getItem("fontelier-api-key");
+    }
+
+    // ── 탭 전환 ──
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", (tab === "recommend" && i === 0) || (tab === "preview" && i === 1));
+      });
+      document.getElementById("tab-recommend").classList.toggle("active", tab === "recommend");
+      document.getElementById("tab-preview").classList.toggle("active", tab === "preview");
+    }
+
+    // ── 태그 ──
+    function renderTags(containerId, tags, selectedArr) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = tags.map(tag =>
+        `<button class="tag-btn${selectedArr.includes(tag) ? " selected" : ""}" onclick="toggleTag('${containerId}', '${tag}')" aria-label="${tag} 선택">${tag}</button>`
+      ).join("");
+    }
+
+    function toggleTag(containerId, tag) {
+      const arr = containerId === "moodTags" ? selectedMoods : selectedUses;
+      const idx = arr.indexOf(tag);
+      if (idx >= 0) arr.splice(idx, 1); else arr.push(tag);
+      renderTags(containerId, containerId === "moodTags" ? MOOD_TAGS : USE_TAGS, arr);
+    }
+
+    // ── AI 추천 ──
+    async function getRecommendation() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        document.getElementById("recommendResult").innerHTML = '<div class="error-msg">⚙️ 먼저 상단에서 Claude API 키를 입력해주세요.</div>';
+        return;
+      }
+
+      const purpose = document.getElementById("purposeInput").value.trim();
+      if (!purpose && selectedMoods.length === 0 && selectedUses.length === 0) {
+        document.getElementById("recommendResult").innerHTML = '<div class="error-msg">💬 용도나 분위기를 입력하거나 태그를 선택해주세요.</div>';
+        return;
+      }
+
+      const btn = document.getElementById("recommendBtn");
+      btn.disabled = true;
+      btn.textContent = "추천 중...";
+      document.getElementById("recommendResult").innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:12px">AI가 최적의 폰트를 찾고 있어요...</p></div>';
+
+      let userMessage = "";
+      if (purpose) userMessage += purpose;
+      if (selectedMoods.length) userMessage += "\n분위기: " + selectedMoods.join(", ");
+      if (selectedUses.length) userMessage += "\n용도: " + selectedUses.join(", ");
+
+      const fontListJson = JSON.stringify(FONT_DATA.map(f => ({
+        id: f.id, name: f.name, category: f.category, price: f.price, isFree: f.isFree,
+        tags: f.tags, mood: f.mood, useCase: f.useCase, description: f.description
+      })));
+
+      const systemPrompt = `당신은 상상토끼 폰틀리에의 폰트 추천 전문가입니다.
+
+사용자가 폰트 사용 목적이나 원하는 분위기를 설명하면,
+아래 폰트 목록에서 가장 적합한 폰트 3개를 추천해주세요.
+
+[폰트 목록]
+${fontListJson}
+
+응답은 반드시 아래 JSON 형식으로만 답하세요. 다른 텍스트 없이 JSON만 출력하세요:
+
+{
+  "recommendations": [
+    {
+      "fontId": "폰트 id값",
+      "reason": "이 폰트를 추천하는 이유 (2-3문장, 구체적으로)",
+      "usageExample": "실제 활용 예시"
+    }
+  ]
+}
+
+규칙:
+- 반드시 위 폰트 목록에 있는 id만 사용
+- 무료/유료 mix 추천 (첫 번째는 접근성 좋은 것)
+- reason은 사용자 입력과 직접 연결되게 작성
+- JSON 외 다른 텍스트 절대 포함 금지
+- \`\`\`json 같은 마크다운 코드블록으로 감싸지 마세요. 순수 JSON만 출력하세요`;
+
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: [{ role: "user", content: userMessage }]
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `API 오류 (${response.status})`);
+        }
+
+        const data = await response.json();
+        let text = data.content[0].text.trim();
+        // 마크다운 코드블록 제거
+        text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/,  "");
+        const parsed = JSON.parse(text);
+        renderRecommendations(parsed.recommendations);
+      } catch (err) {
+        document.getElementById("recommendResult").innerHTML = `<div class="error-msg">😥 추천을 가져오지 못했어요.<br><br>${escapeHtml(err.message)}<br><br>API 키를 확인하고 다시 시도해주세요.</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🤖 AI 추천 받기";
+      }
+    }
+
+    function renderRecommendations(recs) {
+      const container = document.getElementById("recommendResult");
+      const previewText = document.getElementById("previewInput")?.value || "봄날의 따뜻한 햇살처럼";
+
+      let html = '<div class="results-title">✨ 추천 결과</div><div class="result-cards">';
+      recs.forEach((rec, i) => {
+        const font = FONT_DATA.find(f => f.id === rec.fontId);
+        if (!font) return;
+        const priceText = font.isFree ? "무료" : `${font.price.toLocaleString()}원`;
+        html += `
+          <div class="result-card">
+            <div class="rank">✨ 추천 ${i + 1}</div>
+            <div class="font-name">${escapeHtml(font.name)}</div>
+            <div class="font-meta">${escapeHtml(font.category)} | ${priceText}</div>
+            <div class="preview-text" style="font-family:'${font.previewFont}',sans-serif;font-size:32px">${escapeHtml(previewText)}</div>
+            <div class="reason"><strong>📝 추천 이유</strong><br>${escapeHtml(rec.reason)}</div>
+            <div class="usage"><strong>💡 활용 예시</strong><br>${escapeHtml(rec.usageExample)}</div>
+            <a href="${font.shopUrl}" target="_blank" rel="noopener" class="buy-btn" aria-label="${font.name} 구매하기">🛒 구매하기 ${priceText}</a>
+          </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // ── 미리보기 ──
+    function initCategoryFilter() {
+      const categories = [...new Set(FONT_DATA.map(f => f.category))];
+      const select = document.getElementById("categoryFilter");
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    function updateSize() {
+      const val = document.getElementById("sizeSlider").value;
+      document.getElementById("sizeValue").textContent = val + "px";
+      renderPreviewList();
+    }
+
+    function renderPreviewList() {
+      const text = document.getElementById("previewInput").value || "봄날의 따뜻한 햇살처럼";
+      const category = document.getElementById("categoryFilter").value;
+      const size = document.getElementById("sizeSlider").value;
+      const freeOnly = document.getElementById("freeToggle").checked;
+
+      let fonts = FONT_DATA.filter(f => {
+        if (category !== "전체" && f.category !== category) return false;
+        if (freeOnly && !f.isFree) return false;
+        return true;
+      });
+
+      // 무료 상단 정렬
+      fonts.sort((a, b) => (b.isFree ? 1 : 0) - (a.isFree ? 1 : 0));
+
+      const container = document.getElementById("fontList");
+      if (fonts.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px">조건에 맞는 폰트가 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = fonts.map(f => {
+        const priceText = f.isFree ? "무료" : `${f.price.toLocaleString()}원`;
+        return `
+          <div class="font-item">
+            <div class="font-item-header">
+              <span class="font-item-name">${escapeHtml(f.name)}</span>
+              <div class="font-item-badges">
+                <span class="badge badge-category">${escapeHtml(f.category)}</span>
+                ${f.isFree ? '<span class="badge badge-free">무료</span>' : ''}
+              </div>
+            </div>
+            <div class="font-item-preview" style="font-family:'${f.previewFont}',sans-serif;font-size:${size}px">${escapeHtml(text)}</div>
+            <div class="font-item-footer">
+              <a href="${f.shopUrl}" target="_blank" rel="noopener" class="buy-btn-sm" aria-label="${f.name} 구매하기">🛒 ${priceText}</a>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // ── 유틸 ──
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    init();
+  </script>
+</body>
+</html>
