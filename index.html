@@ -53,63 +53,15 @@
       margin-top: 4px;
     }
 
-    /* API 키 설정 */
-    .api-settings {
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-    }
-    .api-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      background: var(--bg-subtle);
-      cursor: pointer;
-      font-size: 0.85rem;
+    /* 사용 횟수 안내 */
+    .usage-info {
+      text-align: center;
+      font-size: 0.82rem;
       color: var(--text-muted);
-      border: none;
-      width: 100%;
-      text-align: left;
-      font-family: inherit;
+      margin-bottom: 12px;
     }
-    .api-toggle:hover { background: var(--border); }
-    .api-toggle .arrow { transition: transform 0.2s; }
-    .api-toggle.open .arrow { transform: rotate(180deg); }
-    .api-body {
-      display: none;
-      padding: 12px 16px;
-      gap: 8px;
-    }
-    .api-body.show { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .api-body input {
-      flex: 1;
-      min-width: 200px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-family: monospace;
-      outline: none;
-    }
-    .api-body input:focus { border-color: var(--primary); }
-    .api-body button {
-      padding: 8px 16px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-family: inherit;
-    }
-    .api-body button:hover { background: var(--primary-dark); }
-    .api-status {
-      width: 100%;
-      font-size: 0.8rem;
-      color: var(--primary-dark);
-    }
+    .usage-info.warn { color: #e67e22; }
+    .usage-info.exhausted { color: #dc2626; }
 
     /* 탭 */
     .tabs {
@@ -411,18 +363,8 @@
       <p>내게 맞는 폰트를 AI가 추천해드려요</p>
     </div>
 
-    <!-- API 키 설정 -->
-    <div class="api-settings">
-      <button class="api-toggle" onclick="toggleApiPanel()" aria-label="API 키 설정 열기/닫기">
-        <span>⚙️ API 키 설정</span>
-        <span class="arrow">▼</span>
-      </button>
-      <div class="api-body" id="apiBody">
-        <input type="password" id="apiKeyInput" placeholder="sk-ant-... Claude API 키를 입력하세요">
-        <button onclick="saveApiKey()">저장</button>
-        <div class="api-status" id="apiStatus"></div>
-      </div>
-    </div>
+    <!-- 남은 횟수 안내 -->
+    <div class="usage-info" id="usageInfo"></div>
 
     <!-- 탭 -->
     <div class="tabs">
@@ -505,8 +447,50 @@
     const MOOD_TAGS = ["감성적", "레트로", "귀여운/키즈", "웹툰/만화", "우아한/고급", "힘찬/남성적", "모던/세련된", "전통/클래식"];
     const USE_TAGS = ["SNS/인스타", "유튜브썸네일", "청첩장", "카페메뉴판", "웹툰제작", "브랜딩/로고", "교육자료", "포스터"];
 
+    // ── API 키 (여기에 실제 키를 입력하세요) ──
+    const API_KEY = "YOUR_API_KEY_HERE";
+
+    const DAILY_LIMIT = 3;
+
     let selectedMoods = [];
     let selectedUses = [];
+
+    // ── 사용 횟수 관리 ──
+    function getUsageData() {
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = sessionStorage.getItem("fontelier-usage");
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.date === today) return data;
+      }
+      return { date: today, count: 0 };
+    }
+
+    function incrementUsage() {
+      const data = getUsageData();
+      data.count++;
+      sessionStorage.setItem("fontelier-usage", JSON.stringify(data));
+      updateUsageUI();
+    }
+
+    function getRemainingCount() {
+      return Math.max(0, DAILY_LIMIT - getUsageData().count);
+    }
+
+    function updateUsageUI() {
+      const remaining = getRemainingCount();
+      const el = document.getElementById("usageInfo");
+      if (remaining === 0) {
+        el.className = "usage-info exhausted";
+        el.textContent = "오늘의 AI 추천 횟수를 모두 사용했어요. 내일 다시 이용해주세요!";
+      } else if (remaining === 1) {
+        el.className = "usage-info warn";
+        el.textContent = `오늘 AI 추천 ${remaining}회 남았어요`;
+      } else {
+        el.className = "usage-info";
+        el.textContent = `오늘 AI 추천 ${remaining}/${DAILY_LIMIT}회 사용 가능`;
+      }
+    }
 
     // ── 초기화 ──
     function init() {
@@ -514,34 +498,7 @@
       renderTags("useTags", USE_TAGS, selectedUses);
       initCategoryFilter();
       renderPreviewList();
-
-      const saved = sessionStorage.getItem("fontelier-api-key");
-      if (saved) {
-        document.getElementById("apiKeyInput").value = saved;
-        document.getElementById("apiStatus").textContent = "✅ API 키가 저장되어 있습니다";
-      }
-    }
-
-    // ── API 키 ──
-    function toggleApiPanel() {
-      const body = document.getElementById("apiBody");
-      const toggle = document.querySelector(".api-toggle");
-      body.classList.toggle("show");
-      toggle.classList.toggle("open");
-    }
-
-    function saveApiKey() {
-      const key = document.getElementById("apiKeyInput").value.trim();
-      if (!key) {
-        document.getElementById("apiStatus").textContent = "❌ API 키를 입력해주세요";
-        return;
-      }
-      sessionStorage.setItem("fontelier-api-key", key);
-      document.getElementById("apiStatus").textContent = "✅ API 키가 저장되었습니다";
-    }
-
-    function getApiKey() {
-      return sessionStorage.getItem("fontelier-api-key");
+      updateUsageUI();
     }
 
     // ── 탭 전환 ──
@@ -570,9 +527,8 @@
 
     // ── AI 추천 ──
     async function getRecommendation() {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        document.getElementById("recommendResult").innerHTML = '<div class="error-msg">⚙️ 먼저 상단에서 Claude API 키를 입력해주세요.</div>';
+      if (getRemainingCount() <= 0) {
+        document.getElementById("recommendResult").innerHTML = '<div class="error-msg">🚫 오늘의 AI 추천 횟수(3회)를 모두 사용했어요.<br>내일 다시 이용해주세요!</div>';
         return;
       }
 
@@ -629,7 +585,7 @@ ${fontListJson}
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": apiKey,
+            "x-api-key": API_KEY,
             "anthropic-version": "2023-06-01",
             "anthropic-dangerous-direct-browser-access": "true"
           },
@@ -651,6 +607,7 @@ ${fontListJson}
         // 마크다운 코드블록 제거
         text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/,  "");
         const parsed = JSON.parse(text);
+        incrementUsage();
         renderRecommendations(parsed.recommendations);
       } catch (err) {
         document.getElementById("recommendResult").innerHTML = `<div class="error-msg">😥 추천을 가져오지 못했어요.<br><br>${escapeHtml(err.message)}<br><br>API 키를 확인하고 다시 시도해주세요.</div>`;
