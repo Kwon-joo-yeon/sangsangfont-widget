@@ -218,6 +218,12 @@
       min-height: 50px;
       line-height: 1.4;
     }
+    .template-preview {
+      margin-bottom: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
     .result-card .reason, .result-card .usage {
       font-size: 0.85rem;
       margin-bottom: 8px;
@@ -604,21 +610,296 @@ ${fontListJson}
       }
     }
 
+    // ── Canvas 템플릿 ──
+    const TEMPLATES = {
+      "카페메뉴판": {
+        bg: (ctx, w, h) => {
+          ctx.fillStyle = "#3c2415";
+          ctx.fillRect(0, 0, w, h);
+          // 나무결 텍스처
+          ctx.globalAlpha = 0.08;
+          for (let i = 0; i < h; i += 4) {
+            ctx.fillStyle = i % 8 === 0 ? "#1a0e08" : "#5a3a24";
+            ctx.fillRect(0, i, w, 2);
+          }
+          ctx.globalAlpha = 1;
+          // 테두리
+          ctx.strokeStyle = "#c8a97e";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(16, 16, w - 32, h - 32);
+          // 상단 장식
+          ctx.fillStyle = "#c8a97e";
+          ctx.font = "14px 'Noto Sans KR'";
+          ctx.textAlign = "center";
+          ctx.fillText("~ TODAY'S MENU ~", w / 2, 44);
+        },
+        textColor: "#f5e6d3",
+        subColor: "#c8a97e",
+        textY: 0.42,
+        subText: "Café Latte ····· 5,500\nAmericano ····· 4,500"
+      },
+      "영화포스터": {
+        bg: (ctx, w, h) => {
+          const grd = ctx.createLinearGradient(0, 0, 0, h);
+          grd.addColorStop(0, "#0a0a1a");
+          grd.addColorStop(0.5, "#1a1a3e");
+          grd.addColorStop(1, "#0a0a1a");
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, w, h);
+          // 별
+          ctx.fillStyle = "#ffffff";
+          for (let i = 0; i < 30; i++) {
+            ctx.globalAlpha = Math.random() * 0.6 + 0.2;
+            ctx.beginPath();
+            ctx.arc(Math.random() * w, Math.random() * h * 0.6, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          // 하단 바
+          ctx.fillStyle = "#c9a84c";
+          ctx.fillRect(40, h - 60, w - 80, 1);
+          ctx.font = "11px 'Noto Sans KR'";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#c9a84c";
+          ctx.fillText("2026. 여름 대개봉", w / 2, h - 38);
+        },
+        textColor: "#ffffff",
+        subColor: "#c9a84c",
+        textY: 0.45,
+        subText: ""
+      },
+      "SNS카드": {
+        bg: (ctx, w, h) => {
+          const grd = ctx.createLinearGradient(0, 0, w, h);
+          grd.addColorStop(0, "#ffecd2");
+          grd.addColorStop(0.5, "#fcb69f");
+          grd.addColorStop(1, "#ff9a9e");
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, w, h);
+          // 원형 장식
+          ctx.globalAlpha = 0.15;
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath(); ctx.arc(w * 0.85, h * 0.2, 60, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(w * 0.15, h * 0.75, 40, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+        },
+        textColor: "#4a2c2a",
+        subColor: "#7a4a48",
+        textY: 0.45,
+        subText: "@sangsangfont"
+      },
+      "청첩장": {
+        bg: (ctx, w, h) => {
+          ctx.fillStyle = "#faf8f4";
+          ctx.fillRect(0, 0, w, h);
+          // 테두리
+          ctx.strokeStyle = "#d4c5a9";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(20, 20, w - 40, h - 40);
+          ctx.strokeStyle = "#e8dcc8";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(26, 26, w - 52, h - 52);
+          // 상단 장식
+          ctx.fillStyle = "#d4c5a9";
+          ctx.font = "12px 'Noto Sans KR'";
+          ctx.textAlign = "center";
+          ctx.fillText("♥ Wedding Invitation ♥", w / 2, 50);
+          // 하단
+          ctx.fillStyle = "#b8a88a";
+          ctx.font = "11px 'Noto Sans KR'";
+          ctx.fillText("2026년 10월 10일 토요일 오후 2시", w / 2, h - 40);
+        },
+        textColor: "#5a4a3a",
+        subColor: "#8a7a6a",
+        textY: 0.42,
+        subText: ""
+      },
+      "웹툰": {
+        bg: (ctx, w, h) => {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+          // 만화 효과선
+          ctx.strokeStyle = "#222";
+          ctx.lineWidth = 2;
+          const cx = w / 2, cy = h / 2;
+          for (let a = 0; a < Math.PI * 2; a += 0.25) {
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(a) * 80, cy + Math.sin(a) * 60);
+            ctx.lineTo(cx + Math.cos(a) * 220, cy + Math.sin(a) * 160);
+            ctx.stroke();
+          }
+          // 중앙 말풍선
+          ctx.fillStyle = "#ffec3d";
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 140, 70, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#222";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        },
+        textColor: "#222222",
+        subColor: "#666",
+        textY: 0.48,
+        subText: ""
+      },
+      "브랜딩": {
+        bg: (ctx, w, h) => {
+          ctx.fillStyle = "#1a1a2e";
+          ctx.fillRect(0, 0, w, h);
+          // 기하학 장식
+          ctx.strokeStyle = "#e94560";
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = 0.3;
+          ctx.strokeRect(w * 0.1, h * 0.1, w * 0.35, h * 0.35);
+          ctx.strokeRect(w * 0.55, h * 0.55, w * 0.35, h * 0.35);
+          ctx.globalAlpha = 0.15;
+          ctx.beginPath(); ctx.arc(w * 0.7, h * 0.3, 50, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 1;
+          // 하단
+          ctx.fillStyle = "#e94560";
+          ctx.fillRect(40, h - 50, 60, 3);
+          ctx.fillStyle = "#aaa";
+          ctx.font = "10px 'Noto Sans KR'";
+          ctx.textAlign = "left";
+          ctx.fillText("BRAND IDENTITY", 40, h - 34);
+        },
+        textColor: "#ffffff",
+        subColor: "#e94560",
+        textY: 0.48,
+        subText: ""
+      },
+      "교육자료": {
+        bg: (ctx, w, h) => {
+          ctx.fillStyle = "#e8f5e9";
+          ctx.fillRect(0, 0, w, h);
+          // 줄 노트
+          for (let y = 60; y < h - 30; y += 28) {
+            ctx.strokeStyle = "#c8e6c9";
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(w - 30, y); ctx.stroke();
+          }
+          // 왼쪽 빨간선
+          ctx.strokeStyle = "#ef9a9a";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(55, 30); ctx.lineTo(55, h - 20); ctx.stroke();
+          // 상단 제목줄
+          ctx.fillStyle = "#43a047";
+          ctx.fillRect(0, 0, w, 36);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 13px 'Noto Sans KR'";
+          ctx.textAlign = "center";
+          ctx.fillText("📚 학습 자료", w / 2, 24);
+        },
+        textColor: "#2e7d32",
+        subColor: "#558b2f",
+        textY: 0.48,
+        subText: ""
+      },
+      "기본": {
+        bg: (ctx, w, h) => {
+          const grd = ctx.createLinearGradient(0, 0, w, h);
+          grd.addColorStop(0, "#e0f7fa");
+          grd.addColorStop(1, "#b2dfdb");
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, w, h);
+        },
+        textColor: "#1a1a1a",
+        subColor: "#666",
+        textY: 0.48,
+        subText: ""
+      }
+    };
+
+    function pickTemplate(font, usageExample) {
+      const text = (font.useCase.join(" ") + " " + font.tags.join(" ") + " " + (usageExample || "")).toLowerCase();
+      if (text.includes("카페") || text.includes("메뉴")) return TEMPLATES["카페메뉴판"];
+      if (text.includes("영화") || text.includes("포스터") || text.includes("시네마")) return TEMPLATES["영화포스터"];
+      if (text.includes("sns") || text.includes("인스타")) return TEMPLATES["SNS카드"];
+      if (text.includes("청첩") || text.includes("초대") || text.includes("카드")) return TEMPLATES["청첩장"];
+      if (text.includes("웹툰") || text.includes("만화") || text.includes("효과")) return TEMPLATES["웹툰"];
+      if (text.includes("브랜") || text.includes("로고") || text.includes("패션")) return TEMPLATES["브랜딩"];
+      if (text.includes("교육") || text.includes("학습") || text.includes("키즈")) return TEMPLATES["교육자료"];
+      return TEMPLATES["기본"];
+    }
+
+    function drawTemplateCanvas(canvasId, font, template, mainText) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width = 420;
+      const h = canvas.height = 260;
+
+      // 배경
+      template.bg(ctx, w, h);
+
+      // 메인 텍스트
+      const fontSize = template === TEMPLATES["웹툰"] ? 28 : 26;
+      ctx.font = `bold ${fontSize}px '${font.previewFont}', sans-serif`;
+      ctx.fillStyle = template.textColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const lines = wrapText(ctx, mainText, w - 80);
+      const lineHeight = fontSize * 1.4;
+      const startY = h * template.textY - ((lines.length - 1) * lineHeight) / 2;
+      lines.forEach((line, i) => {
+        ctx.fillText(line, w / 2, startY + i * lineHeight);
+      });
+
+      // 부제
+      if (template.subText) {
+        ctx.font = "13px 'Noto Sans KR', sans-serif";
+        ctx.fillStyle = template.subColor;
+        const subLines = template.subText.split("\n");
+        subLines.forEach((line, i) => {
+          ctx.fillText(line, w / 2, h * template.textY + 50 + i * 20);
+        });
+      }
+
+      // 폰트명 워터마크
+      ctx.font = "11px 'Noto Sans KR', sans-serif";
+      ctx.fillStyle = template.subColor;
+      ctx.globalAlpha = 0.6;
+      ctx.textAlign = "right";
+      ctx.fillText(`Font: ${font.name}`, w - 20, h - 14);
+      ctx.globalAlpha = 1;
+    }
+
+    function wrapText(ctx, text, maxWidth) {
+      const chars = text.split("");
+      const lines = [];
+      let current = "";
+      for (const ch of chars) {
+        const test = current + ch;
+        if (ctx.measureText(test).width > maxWidth && current) {
+          lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+      return lines.length ? lines : [text];
+    }
+
     function renderRecommendations(recs) {
       const container = document.getElementById("recommendResult");
-      const previewText = document.getElementById("previewInput")?.value || "봄날의 따뜻한 햇살처럼";
+      const purposeText = document.getElementById("purposeInput").value.trim() || "봄날의 따뜻한 햇살처럼";
 
       let html = '<div class="results-title">✨ 추천 결과</div><div class="result-cards">';
       recs.forEach((rec, i) => {
         const font = FONT_DATA.find(f => f.id === rec.fontId);
         if (!font) return;
         const priceText = font.isFree ? "무료" : `${font.price.toLocaleString()}원`;
+        const canvasId = `template-canvas-${i}`;
         html += `
           <div class="result-card">
             <div class="rank">✨ 추천 ${i + 1}</div>
             <div class="font-name">${escapeHtml(font.name)}</div>
             <div class="font-meta">${escapeHtml(font.category)} | ${priceText}</div>
-            <div class="preview-text" style="font-family:'${font.previewFont}',sans-serif;font-size:32px">${escapeHtml(previewText)}</div>
+            <div class="template-preview">
+              <canvas id="${canvasId}" style="width:100%;border-radius:8px;"></canvas>
+            </div>
             <div class="reason"><strong>📝 추천 이유</strong><br>${escapeHtml(rec.reason)}</div>
             <div class="usage"><strong>💡 활용 예시</strong><br>${escapeHtml(rec.usageExample)}</div>
             <a href="${font.shopUrl}" target="_blank" rel="noopener" class="buy-btn" aria-label="${font.name} 구매하기">🛒 구매하기 ${priceText}</a>
@@ -626,6 +907,14 @@ ${fontListJson}
       });
       html += '</div>';
       container.innerHTML = html;
+
+      // Canvas 렌더링 (DOM 삽입 후)
+      recs.forEach((rec, i) => {
+        const font = FONT_DATA.find(f => f.id === rec.fontId);
+        if (!font) return;
+        const template = pickTemplate(font, rec.usageExample);
+        drawTemplateCanvas(`template-canvas-${i}`, font, template, purposeText);
+      });
     }
 
     // ── 미리보기 ──
