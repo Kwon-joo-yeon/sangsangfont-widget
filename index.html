@@ -543,6 +543,109 @@
       margin-bottom: 16px;
     }
 
+    /* 조합 추천 */
+    .pairing-list { display: flex; flex-direction: column; gap: 20px; }
+    .pairing-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--card-shadow);
+    }
+    .pairing-card-header {
+      padding: 14px 18px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pairing-card-header .pair-label {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--primary-dark);
+    }
+    .pairing-card-header .pair-use {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .pairing-preview {
+      padding: 24px 20px;
+    }
+    .pairing-preview-title {
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    .pairing-preview-body {
+      line-height: 1.8;
+      color: #444;
+    }
+    .pairing-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 20px;
+    }
+    .pairing-canvas-wrap {
+      padding: 16px 20px;
+    }
+    .pairing-canvas-wrap canvas {
+      width: 100%;
+      border-radius: 8px;
+    }
+    .pairing-fonts {
+      display: flex;
+      gap: 0;
+      border-top: 1px solid var(--border);
+    }
+    .pairing-font-info {
+      flex: 1;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pairing-font-info:first-child {
+      border-right: 1px solid var(--border);
+    }
+    .pairing-font-info .role {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+    .pairing-font-info .fname {
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+    .pairing-font-info .fprice {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .pairing-font-info .fbuy {
+      margin-top: 4px;
+    }
+    .pairing-total {
+      padding: 10px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .pairing-total .total-price {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .pair-category-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
     /* 반응형 */
     @media (max-width: 480px) {
       #fontelier-widget { padding: 12px; }
@@ -553,6 +656,8 @@
       .range-wrap input[type="range"] { width: 140px; }
       .compare-grid.cols-2, .compare-grid.cols-3 { grid-template-columns: 1fr; }
       .gallery-grid { grid-template-columns: 1fr; }
+      .pairing-fonts { flex-direction: column; }
+      .pairing-font-info:first-child { border-right: none; border-bottom: 1px solid var(--border); }
     }
   </style>
 </head>
@@ -573,6 +678,7 @@
       <button class="tab-btn" onclick="switchTab('preview')" aria-label="미리보기 탭">🔤 미리보기</button>
       <button class="tab-btn" onclick="switchTab('compare')" aria-label="비교 탭">⚖️ 비교</button>
       <button class="tab-btn" onclick="switchTab('gallery')" aria-label="갤러리 탭">🎨 갤러리</button>
+      <button class="tab-btn" onclick="switchTab('pairing')" aria-label="조합 탭">🔗 조합</button>
     </div>
 
     <!-- Tab 1: AI 추천 -->
@@ -644,6 +750,15 @@
       </div>
 
       <div id="compareResult"></div>
+    </div>
+
+    <!-- Tab 5: 조합 추천 -->
+    <div class="tab-content" id="tab-pairing">
+      <div class="input-group">
+        <label>용도별 추천 조합</label>
+        <div class="pair-category-btns" id="pairCategoryBtns"></div>
+      </div>
+      <div class="pairing-list" id="pairingList"></div>
     </div>
 
     <!-- Tab 4: 갤러리 -->
@@ -732,7 +847,7 @@
     }
 
     // ── 탭 전환 ──
-    const TAB_NAMES = ["recommend", "preview", "compare", "gallery"];
+    const TAB_NAMES = ["recommend", "preview", "compare", "gallery", "pairing"];
     function switchTab(tab) {
       document.querySelectorAll(".tab-btn").forEach((btn, i) => {
         btn.classList.toggle("active", tab === TAB_NAMES[i]);
@@ -746,6 +861,9 @@
       }
       if (tab === "gallery") {
         renderGallery();
+      }
+      if (tab === "pairing") {
+        renderPairing();
       }
     }
 
@@ -1392,6 +1510,181 @@ ${fontListJson}
       fonts.forEach((f, i) => {
         drawTemplateCanvas(`gallery-canvas-${i}`, f, template, scene.sampleText);
       });
+    }
+
+    // ── 조합 추천 ──
+    const PAIRINGS = [
+      {
+        category: "전체",
+        pairs: null
+      },
+      {
+        category: "카페·식당",
+        pairs: [
+          { title: "감성 카페 세트", use: "메뉴판 + 안내문", heading: "taktak-clover", body: "sangsang-flowroad", sample: { h: "Today's Special", b: "직접 로스팅한 원두로 내린 핸드드립 커피와 함께\n오늘 하루도 따뜻하게 시작하세요." } },
+          { title: "모던 카페 세트", use: "간판 + 메뉴 설명", heading: "jeongmuk-instablush", body: "sangsang-myeongjo-r", sample: { h: "시그니처 라떼", b: "부드러운 우유 거품 위에 은은한 바닐라 향을 더한\n상상토끼 카페의 시그니처 메뉴입니다." } }
+        ]
+      },
+      {
+        category: "SNS·마케팅",
+        pairs: [
+          { title: "인스타 감성 세트", use: "카드뉴스 + 캡션", heading: "jeongmuk-instablush", body: "little-school", sample: { h: "오늘의 기록", b: "작은 것에서 행복을 찾는 하루.\n일상이 곧 콘텐츠가 되는 순간들." } },
+          { title: "유튜브 썸네일 세트", use: "제목 + 부제", heading: "sangsang-rocknroll", body: "taktak-clover", sample: { h: "이거 실화?!", b: "직접 해보고 알려드리는 솔직 리뷰\n구독자 여러분의 선택을 도와드립니다." } }
+        ]
+      },
+      {
+        category: "영화·포스터",
+        pairs: [
+          { title: "시네마틱 세트", use: "영화 제목 + 태그라인", heading: "taktak-625", body: "sangsang-myeongjo-r", sample: { h: "그해 여름의 끝", b: "잊혀진 약속, 되돌릴 수 없는 시간.\n2026년 여름, 극장에서 만나세요." } },
+          { title: "할리우드 클래식 세트", use: "타이틀 + 크레딧", heading: "hollywood-regular", body: "taktak-topstar", sample: { h: "MIDNIGHT STAR", b: "황금기 할리우드의 감성을 담은\n클래식 무비 포스터 디자인." } }
+        ]
+      },
+      {
+        category: "청첩장·초대장",
+        pairs: [
+          { title: "엘레강스 세트", use: "이름 + 본문 안내", heading: "blackswan", body: "sangsang-myeongjo-r", sample: { h: "민준 ♥ 서연", b: "두 사람이 사랑으로 하나 되는 날\n소중한 분들을 초대합니다." } },
+          { title: "감성 캘리 세트", use: "타이틀 + 안내문", heading: "jeongmuk-instablush", body: "sangsang-flowroad", sample: { h: "함께해주세요", b: "서로 다른 길을 걸어온 두 사람이\n같은 길을 걸어가려 합니다." } }
+        ]
+      },
+      {
+        category: "웹툰·게임",
+        pairs: [
+          { title: "액션 임팩트 세트", use: "효과음 + 대사", heading: "webtoon-kwang", body: "barbarian", sample: { h: "콰앙!!", b: "이 세계의 마지막 용사여,\n전설의 검을 들어라!" } },
+          { title: "코믹 세트", use: "제목 + 나레이션", heading: "webtoon-hwareuruk", body: "shinbi-7", sample: { h: "화르륵!", b: "그날 학교에서 생긴 일은\n아무도 예상하지 못했다." } }
+        ]
+      },
+      {
+        category: "브랜딩·로고",
+        pairs: [
+          { title: "프리미엄 브랜드 세트", use: "브랜드명 + 슬로건", heading: "blackswan", body: "sangsang-myeongjo-r", sample: { h: "MAISON NOIR", b: "당신만의 특별한 순간을 위한\n프리미엄 라이프스타일 브랜드." } },
+          { title: "전통 브랜드 세트", use: "상호 + 소개문", heading: "jeongmuk-baui", body: "sangsang-myeongjo-r", sample: { h: "묵향헌", b: "삼대째 이어온 장인의 손맛,\n전통과 정성을 담아 전합니다." } }
+        ]
+      },
+      {
+        category: "교육·키즈",
+        pairs: [
+          { title: "어린이 학습 세트", use: "제목 + 설명문", heading: "shinbi-7", body: "yerin-7", sample: { h: "즐거운 한글 놀이", b: "가나다라마바사!\n오늘도 재미있게 글자를 배워봐요." } },
+          { title: "교육 자료 세트", use: "단원명 + 본문", heading: "sangsang-rocknroll", body: "little-school", sample: { h: "3단원. 우리 마을", b: "우리가 사는 마을에는 어떤 곳이 있을까요?\n함께 탐험하며 알아봅시다." } }
+        ]
+      }
+    ];
+
+    let currentPairCategory = "전체";
+
+    function getAllPairs() {
+      const all = [];
+      PAIRINGS.forEach(p => { if (p.pairs) all.push(...p.pairs); });
+      return all;
+    }
+
+    function renderPairing() {
+      const btnsEl = document.getElementById("pairCategoryBtns");
+      btnsEl.innerHTML = PAIRINGS.map(p =>
+        `<button class="scene-btn${p.category === currentPairCategory ? " active" : ""}" onclick="selectPairCategory('${p.category}')">${p.category}</button>`
+      ).join("");
+      renderPairingList();
+    }
+
+    function selectPairCategory(cat) {
+      currentPairCategory = cat;
+      renderPairing();
+    }
+
+    function renderPairingList() {
+      const container = document.getElementById("pairingList");
+      const pairs = currentPairCategory === "전체" ? getAllPairs() : (PAIRINGS.find(p => p.category === currentPairCategory)?.pairs || []);
+
+      let html = "";
+      pairs.forEach((pair, i) => {
+        const hFont = FONT_DATA.find(f => f.id === pair.heading);
+        const bFont = FONT_DATA.find(f => f.id === pair.body);
+        if (!hFont || !bFont) return;
+
+        const hPrice = hFont.isFree ? "무료" : `${hFont.price.toLocaleString()}원`;
+        const bPrice = bFont.isFree ? "무료" : `${bFont.price.toLocaleString()}원`;
+        const totalPrice = (hFont.isFree ? 0 : hFont.price) + (bFont.isFree ? 0 : bFont.price);
+        const totalText = totalPrice === 0 ? "모두 무료!" : `세트 합계 ${totalPrice.toLocaleString()}원`;
+        const canvasId = `pairing-canvas-${i}`;
+        const bodyLines = pair.sample.b.split("\n").map(l => escapeHtml(l)).join("<br>");
+
+        html += `
+          <div class="pairing-card">
+            <div class="pairing-card-header">
+              <span class="pair-label">${escapeHtml(pair.title)}</span>
+              <span class="pair-use">${escapeHtml(pair.use)}</span>
+            </div>
+            <div class="pairing-preview">
+              <div class="pairing-preview-title" style="font-family:'${hFont.previewFont}',sans-serif;font-size:28px;font-weight:bold">${escapeHtml(pair.sample.h)}</div>
+              <div class="pairing-preview-body" style="font-family:'${bFont.previewFont}',sans-serif;font-size:16px">${bodyLines}</div>
+            </div>
+            <div class="pairing-divider"></div>
+            <div class="pairing-canvas-wrap">
+              <canvas id="${canvasId}"></canvas>
+            </div>
+            <div class="pairing-fonts">
+              <div class="pairing-font-info">
+                <span class="role">제목용</span>
+                <span class="fname">${escapeHtml(hFont.name)}</span>
+                <span class="fprice">${hFont.isFree ? "🆓 무료" : "💰 " + hPrice}</span>
+                <a href="${hFont.shopUrl}" target="_blank" rel="noopener" class="buy-btn-sm fbuy">구매하기</a>
+              </div>
+              <div class="pairing-font-info">
+                <span class="role">본문용</span>
+                <span class="fname">${escapeHtml(bFont.name)}</span>
+                <span class="fprice">${bFont.isFree ? "🆓 무료" : "💰 " + bPrice}</span>
+                <a href="${bFont.shopUrl}" target="_blank" rel="noopener" class="buy-btn-sm fbuy">구매하기</a>
+              </div>
+            </div>
+            <div class="pairing-total">
+              <span>세트 구매 시</span>
+              <span class="total-price">${totalText}</span>
+            </div>
+          </div>`;
+      });
+      container.innerHTML = html;
+
+      // Canvas 렌더링
+      pairs.forEach((pair, i) => {
+        const hFont = FONT_DATA.find(f => f.id === pair.heading);
+        if (!hFont) return;
+        const template = pickTemplate(hFont, pair.use);
+        drawPairingCanvas(`pairing-canvas-${i}`, pair, hFont, FONT_DATA.find(f => f.id === pair.body), template);
+      });
+    }
+
+    function drawPairingCanvas(canvasId, pair, hFont, bFont, template) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width = 420;
+      const h = canvas.height = 280;
+
+      template.bg(ctx, w, h);
+
+      // 제목
+      ctx.font = `bold 30px '${hFont.previewFont}', sans-serif`;
+      ctx.fillStyle = template.textColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(pair.sample.h, w / 2, h * 0.35);
+
+      // 본문
+      ctx.font = `15px '${bFont.previewFont}', sans-serif`;
+      ctx.fillStyle = template.subColor || template.textColor;
+      ctx.globalAlpha = 0.85;
+      const bodyLines = pair.sample.b.split("\n");
+      bodyLines.forEach((line, i) => {
+        ctx.fillText(line, w / 2, h * 0.55 + i * 22);
+      });
+      ctx.globalAlpha = 1;
+
+      // 폰트명
+      ctx.font = "10px 'Noto Sans KR', sans-serif";
+      ctx.fillStyle = template.subColor || template.textColor;
+      ctx.globalAlpha = 0.5;
+      ctx.textAlign = "right";
+      ctx.fillText(`${hFont.name} + ${bFont.name}`, w - 16, h - 12);
+      ctx.globalAlpha = 1;
     }
 
     // ── 유틸 ──
