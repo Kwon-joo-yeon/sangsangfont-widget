@@ -33,18 +33,16 @@
 
     body {
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f0f2f5;
+      background: var(--bg);
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
 
     #fontelier-widget {
-      max-width: 900px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: 16px;
-      background: var(--bg);
-      min-height: 100vh;
+      padding: 0 20px;
     }
 
     /* 헤더 */
@@ -721,15 +719,8 @@
 
     /* PC — 넓은 화면 */
     @media (min-width: 769px) {
-      body {
-        background: linear-gradient(135deg, #f0f2f5 0%, #e8f5f3 50%, #f0f2f5 100%);
-        padding: 32px 20px;
-      }
       #fontelier-widget {
-        border-radius: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.06);
-        min-height: auto;
-        padding: 28px 36px;
+        padding: 0 40px;
       }
       .widget-header {
         padding: 44px 32px 28px;
@@ -807,8 +798,7 @@
 
     /* PC — 아주 넓은 화면 */
     @media (min-width: 1200px) {
-      body { padding: 48px 40px; }
-      #fontelier-widget { padding: 36px 48px; }
+      #fontelier-widget { padding: 0 60px; }
       .widget-header { padding: 52px 40px 32px; }
       .widget-header h1 { font-size: 1.85rem; }
     }
