@@ -461,6 +461,88 @@
       margin-bottom: 12px;
     }
 
+    /* 갤러리 */
+    .gallery-scenes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .scene-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+    .scene-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .scene-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .gallery-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .gallery-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(2,188,167,0.18);
+    }
+    .gallery-card canvas {
+      width: 100%;
+      display: block;
+    }
+    .gallery-card-info {
+      padding: 12px 14px;
+    }
+    .gallery-card-info .name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+    .gallery-card-info .desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .gallery-card-footer {
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gallery-card-footer .price {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--primary-dark);
+    }
+    .gallery-scene-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .gallery-scene-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
     /* 반응형 */
     @media (max-width: 480px) {
       #fontelier-widget { padding: 12px; }
@@ -470,6 +552,7 @@
       .preview-controls { flex-direction: column; align-items: flex-start; }
       .range-wrap input[type="range"] { width: 140px; }
       .compare-grid.cols-2, .compare-grid.cols-3 { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -489,6 +572,7 @@
       <button class="tab-btn active" onclick="switchTab('recommend')" aria-label="AI 추천 탭">🤖 AI 추천</button>
       <button class="tab-btn" onclick="switchTab('preview')" aria-label="미리보기 탭">🔤 미리보기</button>
       <button class="tab-btn" onclick="switchTab('compare')" aria-label="비교 탭">⚖️ 비교</button>
+      <button class="tab-btn" onclick="switchTab('gallery')" aria-label="갤러리 탭">🎨 갤러리</button>
     </div>
 
     <!-- Tab 1: AI 추천 -->
@@ -560,6 +644,14 @@
       </div>
 
       <div id="compareResult"></div>
+    </div>
+
+    <!-- Tab 4: 갤러리 -->
+    <div class="tab-content" id="tab-gallery">
+      <div class="gallery-scenes" id="galleryScenes"></div>
+      <div class="gallery-scene-title" id="galleryTitle"></div>
+      <div class="gallery-scene-desc" id="galleryDesc"></div>
+      <div class="gallery-grid" id="galleryGrid"></div>
     </div>
   </div>
 
@@ -640,7 +732,7 @@
     }
 
     // ── 탭 전환 ──
-    const TAB_NAMES = ["recommend", "preview", "compare"];
+    const TAB_NAMES = ["recommend", "preview", "compare", "gallery"];
     function switchTab(tab) {
       document.querySelectorAll(".tab-btn").forEach((btn, i) => {
         btn.classList.toggle("active", tab === TAB_NAMES[i]);
@@ -651,6 +743,9 @@
       if (tab === "compare") {
         renderCompareSelector();
         renderCompare();
+      }
+      if (tab === "gallery") {
+        renderGallery();
       }
     }
 
@@ -1193,6 +1288,109 @@ ${fontListJson}
       fonts.forEach((f, i) => {
         const template = pickTemplate(f, "");
         drawTemplateCanvas(`compare-canvas-${i}`, f, template, text);
+      });
+    }
+
+    // ── 갤러리 ──
+    const GALLERY_SCENES = [
+      {
+        id: "cafe", label: "☕ 카페·메뉴판", title: "카페 & 메뉴판에 어울리는 폰트",
+        desc: "따뜻하고 감성적인 카페 분위기를 만들어주는 폰트들",
+        template: "카페메뉴판",
+        sampleText: "오늘의 라떼",
+        fonts: ["sangsang-flowroad", "taktak-clover", "little-school", "jeongmuk-instablush"]
+      },
+      {
+        id: "movie", label: "🎬 영화·포스터", title: "영화 포스터에 어울리는 폰트",
+        desc: "시선을 사로잡는 시네마틱 감성의 폰트들",
+        template: "영화포스터",
+        sampleText: "그해 여름의 끝",
+        fonts: ["taktak-625", "taktak-topstar", "hollywood-regular", "blackswan"]
+      },
+      {
+        id: "sns", label: "📱 SNS·인스타", title: "SNS 콘텐츠에 어울리는 폰트",
+        desc: "인스타그램, 카드뉴스에 감성을 더해주는 폰트들",
+        template: "SNS카드",
+        sampleText: "오늘도 좋은 하루",
+        fonts: ["sangsang-flowroad", "jeongmuk-instablush", "little-school", "jeongmuk-travel"]
+      },
+      {
+        id: "wedding", label: "💍 청첩장·초대장", title: "청첩장 & 초대장에 어울리는 폰트",
+        desc: "우아하고 품격 있는 특별한 날을 위한 폰트들",
+        template: "청첩장",
+        sampleText: "함께해주세요",
+        fonts: ["blackswan", "sangsang-myeongjo-r", "sangsang-flowroad", "jeongmuk-instablush"]
+      },
+      {
+        id: "webtoon", label: "💥 웹툰·만화", title: "웹툰 & 만화에 어울리는 폰트",
+        desc: "역동적인 효과음과 임팩트를 표현하는 폰트들",
+        template: "웹툰",
+        sampleText: "콰앙!!",
+        fonts: ["webtoon-hwareuruk", "webtoon-kwang", "sangsang-rocknroll", "barbarian"]
+      },
+      {
+        id: "brand", label: "✨ 브랜딩·로고", title: "브랜딩 & 로고에 어울리는 폰트",
+        desc: "브랜드 아이덴티티를 완성하는 개성 있는 폰트들",
+        template: "브랜딩",
+        sampleText: "BRAND STORY",
+        fonts: ["sangsang-myeongjo-r", "blackswan", "hollywood-regular", "jeongmuk-baui"]
+      },
+      {
+        id: "kids", label: "🧸 키즈·교육", title: "키즈 & 교육자료에 어울리는 폰트",
+        desc: "아이들의 눈높이에 맞춘 귀엽고 친근한 폰트들",
+        template: "교육자료",
+        sampleText: "가나다라마바사",
+        fonts: ["shinbi-7", "yerin-7", "sangsang-flowroad", "little-school"]
+      }
+    ];
+
+    let currentScene = "cafe";
+
+    function renderGallery() {
+      const scenesEl = document.getElementById("galleryScenes");
+      scenesEl.innerHTML = GALLERY_SCENES.map(s =>
+        `<button class="scene-btn${s.id === currentScene ? " active" : ""}" onclick="selectScene('${s.id}')">${s.label}</button>`
+      ).join("");
+      renderGalleryGrid();
+    }
+
+    function selectScene(sceneId) {
+      currentScene = sceneId;
+      renderGallery();
+    }
+
+    function renderGalleryGrid() {
+      const scene = GALLERY_SCENES.find(s => s.id === currentScene);
+      if (!scene) return;
+
+      document.getElementById("galleryTitle").textContent = scene.title;
+      document.getElementById("galleryDesc").textContent = scene.desc;
+
+      const grid = document.getElementById("galleryGrid");
+      const fonts = scene.fonts.map(id => FONT_DATA.find(f => f.id === id)).filter(Boolean);
+
+      let html = "";
+      fonts.forEach((f, i) => {
+        const priceText = f.isFree ? "무료" : `${f.price.toLocaleString()}원`;
+        const canvasId = `gallery-canvas-${i}`;
+        html += `
+          <div class="gallery-card">
+            <canvas id="${canvasId}"></canvas>
+            <div class="gallery-card-info">
+              <div class="name">${escapeHtml(f.name)}</div>
+              <div class="desc">${escapeHtml(f.description)}</div>
+            </div>
+            <div class="gallery-card-footer">
+              <span class="price">${f.isFree ? "🆓 무료" : "💰 " + priceText}</span>
+              <a href="${f.shopUrl}" target="_blank" rel="noopener" class="buy-btn-sm">구매하기</a>
+            </div>
+          </div>`;
+      });
+      grid.innerHTML = html;
+
+      const template = TEMPLATES[scene.template] || TEMPLATES["기본"];
+      fonts.forEach((f, i) => {
+        drawTemplateCanvas(`gallery-canvas-${i}`, f, template, scene.sampleText);
       });
     }
 
