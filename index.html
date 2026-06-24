@@ -350,6 +350,117 @@
     }
     .buy-btn-sm:hover { background: var(--primary-dark); }
 
+    /* 비교 모드 */
+    .compare-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .compare-chip {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #fff;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+    .compare-chip:hover { border-color: var(--primary); }
+    .compare-chip.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .compare-chip.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .compare-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .compare-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .compare-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--card-shadow);
+    }
+    .compare-card-header {
+      padding: 12px 16px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .compare-card-header .name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .compare-card-header .meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .compare-card-body {
+      padding: 20px 16px;
+    }
+    .compare-preview-text {
+      line-height: 1.5;
+      word-break: keep-all;
+      margin-bottom: 12px;
+    }
+    .compare-card-canvas {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .compare-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .compare-card-tags .tag {
+      padding: 2px 8px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--primary-dark);
+    }
+    .compare-card-footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .compare-card-footer .price {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--primary-dark);
+    }
+    .compare-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+    .compare-count {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
     /* 반응형 */
     @media (max-width: 480px) {
       #fontelier-widget { padding: 12px; }
@@ -358,6 +469,7 @@
       .result-card { padding: 14px; }
       .preview-controls { flex-direction: column; align-items: flex-start; }
       .range-wrap input[type="range"] { width: 140px; }
+      .compare-grid.cols-2, .compare-grid.cols-3 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -376,6 +488,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('recommend')" aria-label="AI 추천 탭">🤖 AI 추천</button>
       <button class="tab-btn" onclick="switchTab('preview')" aria-label="미리보기 탭">🔤 미리보기</button>
+      <button class="tab-btn" onclick="switchTab('compare')" aria-label="비교 탭">⚖️ 비교</button>
     </div>
 
     <!-- Tab 1: AI 추천 -->
@@ -425,6 +538,28 @@
       </div>
 
       <div class="font-list" id="fontList"></div>
+    </div>
+
+    <!-- Tab 3: 비교 -->
+    <div class="tab-content" id="tab-compare">
+      <div class="input-group">
+        <label for="compareInput">비교할 문장을 입력하세요</label>
+        <input type="text" class="text-input" id="compareInput" value="봄날의 따뜻한 햇살처럼" oninput="renderCompare()">
+      </div>
+
+      <div class="input-group">
+        <label>비교할 폰트 선택 (최대 3개)</label>
+        <div class="compare-count" id="compareCount"></div>
+        <div class="compare-selector" id="compareSelector"></div>
+      </div>
+
+      <div class="range-wrap" style="margin-bottom:16px">
+        <label for="compareSizeSlider">크기:</label>
+        <input type="range" id="compareSizeSlider" min="24" max="72" value="36" oninput="updateCompareSize()">
+        <span id="compareSizeValue">36px</span>
+      </div>
+
+      <div id="compareResult"></div>
     </div>
   </div>
 
@@ -505,12 +640,18 @@
     }
 
     // ── 탭 전환 ──
+    const TAB_NAMES = ["recommend", "preview", "compare"];
     function switchTab(tab) {
       document.querySelectorAll(".tab-btn").forEach((btn, i) => {
-        btn.classList.toggle("active", (tab === "recommend" && i === 0) || (tab === "preview" && i === 1));
+        btn.classList.toggle("active", tab === TAB_NAMES[i]);
       });
-      document.getElementById("tab-recommend").classList.toggle("active", tab === "recommend");
-      document.getElementById("tab-preview").classList.toggle("active", tab === "preview");
+      TAB_NAMES.forEach(t => {
+        document.getElementById("tab-" + t).classList.toggle("active", t === tab);
+      });
+      if (tab === "compare") {
+        renderCompareSelector();
+        renderCompare();
+      }
     }
 
     // ── 태그 ──
@@ -973,6 +1114,86 @@ ${fontListJson}
             </div>
           </div>`;
       }).join("");
+    }
+
+    // ── 비교 모드 ──
+    let selectedCompare = [];
+    const COMPARE_MAX = 3;
+
+    function renderCompareSelector() {
+      const container = document.getElementById("compareSelector");
+      container.innerHTML = FONT_DATA.map(f => {
+        const selected = selectedCompare.includes(f.id);
+        const disabled = !selected && selectedCompare.length >= COMPARE_MAX;
+        let cls = "compare-chip";
+        if (selected) cls += " selected";
+        if (disabled) cls += " disabled";
+        return `<button class="${cls}" onclick="toggleCompareFont('${f.id}')" aria-label="${f.name} 선택">${f.name}</button>`;
+      }).join("");
+      document.getElementById("compareCount").textContent = `${selectedCompare.length}/${COMPARE_MAX}개 선택됨`;
+    }
+
+    function toggleCompareFont(id) {
+      const idx = selectedCompare.indexOf(id);
+      if (idx >= 0) {
+        selectedCompare.splice(idx, 1);
+      } else if (selectedCompare.length < COMPARE_MAX) {
+        selectedCompare.push(id);
+      }
+      renderCompareSelector();
+      renderCompare();
+    }
+
+    function updateCompareSize() {
+      const val = document.getElementById("compareSizeSlider").value;
+      document.getElementById("compareSizeValue").textContent = val + "px";
+      renderCompare();
+    }
+
+    function renderCompare() {
+      const container = document.getElementById("compareResult");
+      if (selectedCompare.length === 0) {
+        container.innerHTML = '<div class="compare-empty">위에서 비교할 폰트를 선택해주세요.<br>최대 3개까지 나란히 비교할 수 있어요.</div>';
+        return;
+      }
+
+      const text = document.getElementById("compareInput").value || "봄날의 따뜻한 햇살처럼";
+      const size = document.getElementById("compareSizeSlider").value;
+      const fonts = selectedCompare.map(id => FONT_DATA.find(f => f.id === id)).filter(Boolean);
+      const colClass = fonts.length >= 3 ? "cols-3" : fonts.length === 2 ? "cols-2" : "";
+
+      let html = `<div class="compare-grid ${colClass}">`;
+      fonts.forEach((f, i) => {
+        const priceText = f.isFree ? "무료" : `${f.price.toLocaleString()}원`;
+        const canvasId = `compare-canvas-${i}`;
+        html += `
+          <div class="compare-card">
+            <div class="compare-card-header">
+              <span class="name">${escapeHtml(f.name)}</span>
+              <span class="meta">${escapeHtml(f.category)}</span>
+            </div>
+            <div class="compare-card-body">
+              <div class="compare-preview-text" style="font-family:'${f.previewFont}',sans-serif;font-size:${size}px">${escapeHtml(text)}</div>
+              <canvas id="${canvasId}" class="compare-card-canvas"></canvas>
+              <div class="compare-card-tags">
+                ${f.mood.map(m => `<span class="tag">${escapeHtml(m)}</span>`).join("")}
+              </div>
+              <div style="font-size:0.8rem;color:var(--text-muted)">${escapeHtml(f.description)}</div>
+            </div>
+            <div class="compare-card-footer">
+              <span class="price">${f.isFree ? "🆓 무료" : "💰 " + priceText}</span>
+              <a href="${f.shopUrl}" target="_blank" rel="noopener" class="buy-btn-sm" aria-label="${f.name} 구매하기">구매하기</a>
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+
+      // Canvas 템플릿 렌더링
+      fonts.forEach((f, i) => {
+        const template = pickTemplate(f, "");
+        drawTemplateCanvas(`compare-canvas-${i}`, f, template, text);
+      });
     }
 
     // ── 유틸 ──
